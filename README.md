@@ -4,111 +4,61 @@
 
 ---
 
-# English
+## English
 
-QuizNest is a cross-platform question bank and mistake-review system designed for efficient learning, spaced repetition, and long-term knowledge retention.
+QuizNest is a cross-platform question bank and mistake-review system. It follows a question-bank-first workflow: users select a question bank from the home page, then practice questions, review mistakes, view statistics, import or export data, and manage settings within that bank.
 
-The project aims to provide a flexible and extensible platform for building personal knowledge bases, practicing questions, managing mistakes, and reviewing content across multiple devices.
+### Core Features
 
-## Features
+- **Question bank management:** organize questions into independent, reusable banks.
+- **Practice workflow:** select a bank and complete questions in a focused flow.
+- **Mistake review:** collect incorrect answers and schedule targeted reviews.
+- **Offline first:** keep core question-bank and review features available without a network connection.
+- **Multi-device synchronization:** keep question banks and progress consistent across devices.
+- **Import and export:** move question-bank data in and out through supported formats.
+- **Statistics and analytics:** understand practice progress, accuracy, and review outcomes.
 
-- Question bank management
-- Mistake collection and review
-- Smart review workflow
-- Offline-first architecture
-- Multi-device synchronization
-- Import and export support
-- Learning statistics and analytics
-- Extensible data model
+### Project Structure
 
-## Planned Architecture
-
-```text
-Frontend
- ├── Web Application
- └── Mobile Application
-
-Backend
- ├── API Service
- └── Synchronization Service
-
-Storage
- ├── Local Database
- └── Remote Database
-```
-
-## Roadmap
-
-### Phase 1
-- [ ] Project initialization
-- [ ] Question data model
-- [ ] Local storage
-- [ ] Basic review workflow
-
-### Phase 2
-- [ ] Mistake management
-- [ ] Statistics dashboard
-- [ ] Import/export tools
-- [ ] Synchronization prototype
-
-### Phase 3
-- [ ] Mobile support
-- [ ] Advanced review algorithms
-- [ ] Cross-device collaboration
+- `apps/` contains user-facing applications and services:
+  - `web/`: Web application.
+  - `mobile/`: future mobile application.
+  - `api/`: future backend API service.
+- `packages/` contains reusable domain modules:
+  - `core/`: question banks, practice, mistakes, and review scheduling.
+  - `shared/`: shared types, constants, and utilities.
+  - `import-export/`: question-bank import and export logic.
+- `samples/question-banks/` contains sample question banks without real personal data.
+- `scripts/` contains project helper scripts.
 
 ---
 
-# 中文
+## 中文
 
-QuizNest 是一个面向长期学习场景的跨平台题库与错题复习系统，旨在提供高效刷题、错题管理、间隔复习和多设备同步能力。
+QuizNest 是一个跨平台题库与错题复习系统。产品采用“题库优先”的流程：用户先在首页选择题库，再进入该题库的刷题、错题复习、统计、导入导出和设置等功能。
 
-项目目标是构建一个灵活、可扩展的个人知识与练习平台，用于题库管理、错题归纳、复习规划以及跨设备学习。
+### 核心功能
 
-## 功能规划
+- **题库管理：** 将题目组织为相互独立、可复用的题库。
+- **刷题流程：** 选择题库后进入专注的答题流程。
+- **错题复习：** 收集错题并安排针对性复习。
+- **离线优先：** 无网络时仍可使用核心题库和复习功能。
+- **多设备同步：** 在不同设备间保持题库和进度一致。
+- **导入导出：** 通过受支持的格式迁移题库数据。
+- **统计分析：** 查看刷题进度、正确率和复习效果。
 
-- 题库管理
-- 错题收集与复习
-- 智能复习流程
-- 离线优先架构
-- 多设备同步
-- 数据导入与导出
-- 学习统计分析
-- 可扩展数据模型
+### 项目结构
 
-## 计划架构
-
-```text
-前端
- ├── Web 应用
- └── 移动端应用
-
-后端
- ├── API 服务
- └── 同步服务
-
-存储
- ├── 本地数据库
- └── 云端数据库
-```
-
-## 开发路线
-
-### 第一阶段
-- [ ] 项目初始化
-- [ ] 题目数据模型
-- [ ] 本地存储
-- [ ] 基础复习流程
-
-### 第二阶段
-- [ ] 错题管理
-- [ ] 数据统计面板
-- [ ] 导入导出工具
-- [ ] 同步原型
-
-### 第三阶段
-- [ ] 移动端支持
-- [ ] 高级复习算法
-- [ ] 多设备协同
+- `apps/` 存放面向用户的应用与服务：
+  - `web/`：Web 应用。
+  - `mobile/`：未来移动端应用。
+  - `api/`：未来后端 API 服务。
+- `packages/` 存放可复用的领域模块：
+  - `core/`：题库、刷题、错题和复习调度等核心业务逻辑。
+  - `shared/`：共享类型、常量和工具函数。
+  - `import-export/`：题库导入导出逻辑。
+- `samples/question-banks/` 存放不含真实个人数据的示例题库。
+- `scripts/` 存放项目辅助脚本。
 
 ---
 
