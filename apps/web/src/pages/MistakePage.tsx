@@ -1,3 +1,3 @@
 export function MistakePage() {
-  return <section>Mistake Page</section>
+  return <section>错题复习</section>
 }

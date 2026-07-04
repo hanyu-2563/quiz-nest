@@ -1,33 +1,268 @@
 .app-shell {
   min-height: 100vh;
-  display: grid;
-  place-items: center;
-  padding: 32px;
+  background: #f7f8fa;
 }
 
-.hero {
-  max-width: 720px;
+.app-header {
+  display: flex;
+  align-items: center;
+  gap: 20px;
+  min-height: 64px;
+  padding: 0 24px;
+  border-bottom: 1px solid #d9dee5;
+  background: #fff;
+  color: #5a6573;
+  font-size: 14px;
+}
+
+.brand-button {
+  padding: 0;
+  border: 0;
+  background: transparent;
+  color: #17202a;
+  font-size: 20px;
+  font-weight: 700;
+}
+
+.app-content {
+  width: min(960px, calc(100% - 40px));
+  margin: 0 auto;
+  padding: 56px 0 80px;
+}
+
+.page {
   width: 100%;
 }
 
+.page-heading {
+  max-width: 680px;
+  margin-bottom: 32px;
+}
+
 .eyebrow {
-  margin: 0 0 12px;
-  font-size: 14px;
+  margin: 0 0 10px;
+  font-size: 13px;
+  font-weight: 700;
   letter-spacing: 0.08em;
   text-transform: uppercase;
-  color: #666;
+  color: #52606d;
 }
 
 h1 {
-  margin: 0;
-  font-size: clamp(40px, 8vw, 72px);
-  line-height: 1;
+  margin: 0 0 14px;
+  color: #17202a;
+  font-size: clamp(32px, 6vw, 48px);
+  line-height: 1.1;
 }
 
-.description {
+.page-heading p:last-child {
+  margin: 0;
+  color: #52606d;
+  font-size: 17px;
+  line-height: 1.6;
+}
+
+button {
+  padding: 10px 16px;
+  border: 1px solid #1d4f91;
+  border-radius: 5px;
+  background: #1d4f91;
+  color: #fff;
+  cursor: pointer;
+}
+
+button:hover:not(:disabled) {
+  background: #173f74;
+}
+
+button:focus-visible {
+  outline: 3px solid #93b9e8;
+  outline-offset: 2px;
+}
+
+button:disabled {
+  cursor: not-allowed;
+  opacity: 0.55;
+}
+
+.text-button {
+  margin-bottom: 28px;
+  padding: 0;
+  border: 0;
+  background: transparent;
+  color: #1d4f91;
+}
+
+.text-button:hover:not(:disabled) {
+  background: transparent;
+  text-decoration: underline;
+}
+
+.bank-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(260px, 1fr));
+  gap: 16px;
+}
+
+.bank-card {
+  padding: 24px;
+  border: 1px solid #cfd6de;
+  border-radius: 6px;
+  background: #fff;
+}
+
+.bank-card h2 {
+  margin: 0 0 10px;
+  font-size: 22px;
+}
+
+.bank-card p {
+  color: #52606d;
+  line-height: 1.5;
+}
+
+.bank-card-meta {
+  font-size: 14px;
+}
+
+.bank-summary {
+  max-width: 480px;
+  margin: 0 0 28px;
+  padding: 18px 20px;
+  border: 1px solid #cfd6de;
+  background: #fff;
+}
+
+.bank-summary p {
+  margin: 0;
+}
+
+.bank-summary p + p {
+  margin-top: 8px;
+  color: #52606d;
+}
+
+.practice-header {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 24px;
+  margin-bottom: 28px;
+}
+
+.practice-header h1 {
+  font-size: 28px;
+}
+
+.question-card {
+  padding: 24px;
+  border: 1px solid #cfd6de;
+  border-radius: 6px;
+  background: #fff;
+}
+
+.question-card h2 {
   margin: 20px 0 0;
-  max-width: 560px;
-  font-size: 18px;
-  line-height: 1.7;
-  color: #555;
+  font-size: 24px;
+  line-height: 1.4;
+}
+
+.question-meta {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px 18px;
+  color: #52606d;
+  font-size: 14px;
+}
+
+.difficulty {
+  font-weight: 700;
+  text-transform: capitalize;
+}
+
+.difficulty-easy {
+  color: #237a47;
+}
+
+.difficulty-medium {
+  color: #8a5a00;
+}
+
+.difficulty-hard {
+  color: #a12828;
+}
+
+.option-list {
+  display: grid;
+  gap: 10px;
+  margin: 18px 0;
+}
+
+.option-button {
+  width: 100%;
+  padding: 14px 16px;
+  border-color: #b8c2cc;
+  background: #fff;
+  color: #17202a;
+  text-align: left;
+}
+
+.option-button:hover:not(:disabled),
+.option-button[aria-pressed='true'] {
+  border-color: #1d4f91;
+  background: #eaf2fb;
+}
+
+.option-button:disabled {
+  opacity: 1;
+}
+
+.option-correct,
+.option-correct:hover:not(:disabled) {
+  border-color: #237a47;
+  background: #e8f5ed;
+}
+
+.option-incorrect,
+.option-incorrect:hover:not(:disabled) {
+  border-color: #a12828;
+  background: #faeaea;
+}
+
+.answer-feedback {
+  margin-top: 24px;
+  padding: 20px;
+  border-left: 4px solid;
+  background: #fff;
+}
+
+.answer-feedback h2 {
+  margin: 0 0 10px;
+}
+
+.answer-feedback p {
+  line-height: 1.6;
+}
+
+.feedback-correct {
+  border-color: #237a47;
+}
+
+.feedback-incorrect {
+  border-color: #a12828;
+}
+
+@media (max-width: 600px) {
+  .app-header span {
+    display: none;
+  }
+
+  .app-content {
+    width: min(100% - 28px, 960px);
+    padding-top: 36px;
+  }
+
+  .practice-header {
+    display: block;
+  }
 }
