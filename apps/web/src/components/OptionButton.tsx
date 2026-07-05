@@ -4,6 +4,7 @@ export type OptionState = 'default' | 'correct' | 'incorrect'
 
 export interface OptionButtonProps {
   choice: Choice
+  shortcutLabel?: string
   selected?: boolean
   disabled?: boolean
   state?: OptionState
@@ -12,6 +13,7 @@ export interface OptionButtonProps {
 
 export function OptionButton({
   choice,
+  shortcutLabel,
   selected = false,
   disabled = false,
   state = 'default',
@@ -25,7 +27,12 @@ export function OptionButton({
       disabled={disabled}
       onClick={() => onSelect?.(choice.id)}
     >
-      {choice.content}
+      {shortcutLabel && (
+        <span className="option-key" aria-hidden="true">
+          {shortcutLabel}
+        </span>
+      )}
+      <span>{choice.content}</span>
     </button>
   )
 }
