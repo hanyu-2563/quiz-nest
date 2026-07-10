@@ -1,19 +1,30 @@
 import type { WorkspaceSection } from '../components/BankWorkspace'
 import type {
   BankStatistics,
-  PracticeMode,
+  PracticeOrder,
   PracticeSession,
   PracticeSettings,
+  PracticeSource,
   Question,
   QuestionBank,
 } from '../types/quiz'
 import { formatDate } from '../utils/date'
+import { getPracticeSessionProgress } from '../utils/practice'
 
-const modeLabels: Record<PracticeMode, string> = {
+const sourceLabels: Record<PracticeSource, string> = {
+  all: '全部题目',
+  unpracticed: '未练习题',
+  mistakes: '错题复习',
+}
+
+const orderLabels: Record<PracticeOrder, string> = {
   sequential: '顺序练习',
   random: '随机练习',
   'difficulty-ascending': '难度递增',
-  'mistake-review': '错题复习',
+}
+
+function formatPracticeLabel(settings: PracticeSettings) {
+  return `${sourceLabels[settings.source]} · ${orderLabels[settings.order]}`
 }
 
 export interface BankHomeProps {
@@ -65,6 +76,9 @@ export function BankHome({
       : Math.round(
           (statistics.practicedQuestions / statistics.totalQuestions) * 100,
         )
+  const activeSessionProgress = activeSession
+    ? getPracticeSessionProgress(activeSession)
+    : undefined
 
   function updateSetting<Key extends keyof PracticeSettings>(
     key: Key,
@@ -84,14 +98,14 @@ export function BankHome({
           </div>
         </div>
 
-        {activeSession && (
+        {activeSession && activeSessionProgress && (
           <section className="resume-panel">
             <div>
               <span className="panel-kicker">未完成练习</span>
-              <h2>{modeLabels[activeSession.mode]}</h2>
+              <h2>{formatPracticeLabel(activeSession.settings)}</h2>
               <p>
-                已完成 {activeSession.answeredCount} /{' '}
-                {activeSession.totalCount} 题，进度已自动保存。
+                已完成 {activeSessionProgress.answeredCount} /{' '}
+                {activeSessionProgress.totalCount} 题，进度已自动保存。
               </p>
             </div>
             <button type="button" onClick={onContinuePractice}>
@@ -148,8 +162,8 @@ export function BankHome({
             <div>
               <h2>开始练习</h2>
               <p>
-                {modeLabels[settings.mode]}，当前有 {availableQuestionCount}{' '}
-                道题可练习。
+                {formatPracticeLabel(settings)}，当前有{' '}
+                {availableQuestionCount} 道题可练习。
               </p>
             </div>
             <button type="button" onClick={onOpenPractice}>
@@ -203,14 +217,36 @@ export function BankHome({
 
           <div className="settings-grid">
             <label>
-              练习模式
+              题目来源
               <select
-                value={settings.mode}
+                value={settings.source}
                 onChange={(event) =>
-                  updateSetting('mode', event.target.value as PracticeMode)
+                  updateSetting(
+                    'source',
+                    event.target.value as PracticeSource,
+                  )
                 }
               >
-                {Object.entries(modeLabels).map(([value, label]) => (
+                {Object.entries(sourceLabels).map(([value, label]) => (
+                  <option key={value} value={value}>
+                    {label}
+                  </option>
+                ))}
+              </select>
+            </label>
+
+            <label>
+              出题顺序
+              <select
+                value={settings.order}
+                onChange={(event) =>
+                  updateSetting(
+                    'order',
+                    event.target.value as PracticeOrder,
+                  )
+                }
+              >
+                {Object.entries(orderLabels).map(([value, label]) => (
                   <option key={value} value={value}>
                     {label}
                   </option>
@@ -251,33 +287,9 @@ export function BankHome({
             </label>
           </div>
 
-          <fieldset className="filter-options">
-            <legend>附加筛选</legend>
-            <label>
-              <input
-                type="checkbox"
-                checked={settings.onlyUnpracticed}
-                onChange={(event) =>
-                  updateSetting('onlyUnpracticed', event.target.checked)
-                }
-              />
-              只练未练习题
-            </label>
-            <label>
-              <input
-                type="checkbox"
-                checked={settings.onlyMistakes}
-                onChange={(event) =>
-                  updateSetting('onlyMistakes', event.target.checked)
-                }
-              />
-              只练未掌握错题
-            </label>
-          </fieldset>
-
           <div className="start-practice-row">
             <div>
-              <strong>{modeLabels[settings.mode]}</strong>
+              <strong>{formatPracticeLabel(settings)}</strong>
               <span> · {availableQuestionCount} 道题</span>
             </div>
             <button
@@ -290,12 +302,13 @@ export function BankHome({
           </div>
         </section>
 
-        {activeSession && (
+        {activeSession && activeSessionProgress && (
           <section className="existing-session-note">
             <div>
               <strong>已有未完成练习</strong>
               <span>
-                {activeSession.answeredCount} / {activeSession.totalCount} 题
+                {activeSessionProgress.answeredCount} /{' '}
+                {activeSessionProgress.totalCount} 题
               </span>
             </div>
             <button

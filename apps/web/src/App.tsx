@@ -16,10 +16,14 @@ import type {
   Question,
 } from './types/quiz'
 import {
+  abandonPracticeSession,
   createAttempt,
   createPracticeSession,
+  finishPracticeSession,
+  getActivePracticeSession,
   getBankStatistics,
   getPracticeQuestions,
+  startPracticeSession,
   updateMistakes,
 } from './utils/practice'
 import { defaultPracticeSettings } from './utils/storage'
@@ -62,9 +66,7 @@ function App() {
       )
     : []
   const activeSession = selectedBank
-    ? data.sessions.find(
-        (session) => session.bankId === selectedBank.id,
-      )
+    ? getActivePracticeSession(data.sessions, selectedBank.id)
     : undefined
   const practiceSettings = selectedBank
     ? {
@@ -111,9 +113,7 @@ function App() {
         data.attempts,
         data.mistakes,
       ),
-      activeSession: data.sessions.find(
-        (session) => session.bankId === bank.id,
-      ),
+      activeSession: getActivePracticeSession(data.sessions, bank.id),
     }
   })
   const hasLocalData =
@@ -179,7 +179,7 @@ function App() {
 
     if (
       activeSession &&
-      !window.confirm('开始新练习会覆盖当前未完成的练习，是否继续？')
+      !window.confirm('开始新练习会放弃当前未完成的练习，是否继续？')
     ) {
       return
     }
@@ -187,17 +187,12 @@ function App() {
     const session = createPracticeSession(
       selectedBank.id,
       questions,
-      settings.mode,
+      settings,
     )
 
     setData((current) => ({
       ...current,
-      sessions: [
-        ...current.sessions.filter(
-          (item) => item.bankId !== selectedBank.id,
-        ),
-        session,
-      ],
+      sessions: startPracticeSession(current.sessions, session),
     }))
     setView('practice')
   }
@@ -205,8 +200,8 @@ function App() {
   function startMistakeReview() {
     const reviewSettings: PracticeSettings = {
       ...defaultPracticeSettings,
-      mode: 'mistake-review',
-      onlyMistakes: true,
+      source: 'mistakes',
+      order: 'sequential',
     }
     startPractice(reviewSettings)
   }
@@ -223,7 +218,9 @@ function App() {
     setData((current) => ({
       ...current,
       sessions: current.sessions.map((session) =>
-        session.id === activeSession.id ? updater(session) : session,
+        session.id === activeSession.id && session.status === 'active'
+          ? updater(session)
+          : session,
       ),
     }))
   }
@@ -264,6 +261,7 @@ function App() {
 
       if (
         !currentSession ||
+        currentSession.status !== 'active' ||
         currentSession.answers[question.id]?.submitted
       ) {
         return current
@@ -289,17 +287,9 @@ function App() {
             answeredAt: attempt.answeredAt,
           },
         }
-        const submittedAnswers = Object.values(answers).filter(
-          (answer) => answer.submitted,
-        )
-
         return {
           ...session,
           answers,
-          answeredCount: submittedAnswers.length,
-          correctCount: submittedAnswers.filter(
-            (answer) => answer.isCorrect,
-          ).length,
           updatedAt: attempt.answeredAt,
         }
       })
@@ -346,8 +336,9 @@ function App() {
 
     setData((current) => ({
       ...current,
-      sessions: current.sessions.filter(
-        (session) => session.id !== activeSession.id,
+      sessions: finishPracticeSession(
+        current.sessions,
+        activeSession.id,
       ),
     }))
     setBankSection('overview')
@@ -358,26 +349,33 @@ function App() {
     if (
       !selectedBank ||
       !window.confirm(
-        '将删除当前题库的答题记录和未完成练习，错题记录会保留。是否继续？',
+        '将删除当前题库的答题记录并结束未完成练习，错题记录和练习会话历史会保留。是否继续？',
       )
     ) {
       return
     }
 
-    setData((current) => ({
-      ...current,
-      attempts: current.attempts.filter(
-        (attempt) => attempt.bankId !== selectedBank.id,
-      ),
-      mistakes: current.mistakes.map((mistake) =>
-        mistake.bankId === selectedBank.id
-          ? { ...mistake, latestAttemptId: undefined }
-          : mistake,
-      ),
-      sessions: current.sessions.filter(
-        (session) => session.bankId !== selectedBank.id,
-      ),
-    }))
+    setData((current) => {
+      const currentSession = getActivePracticeSession(
+        current.sessions,
+        selectedBank.id,
+      )
+
+      return {
+        ...current,
+        attempts: current.attempts.filter(
+          (attempt) => attempt.bankId !== selectedBank.id,
+        ),
+        mistakes: current.mistakes.map((mistake) =>
+          mistake.bankId === selectedBank.id
+            ? { ...mistake, latestAttemptId: undefined }
+            : mistake,
+        ),
+        sessions: currentSession
+          ? abandonPracticeSession(current.sessions, currentSession.id)
+          : current.sessions,
+      }
+    })
   }
 
   function clearCurrentBankMistakes() {
@@ -388,24 +386,31 @@ function App() {
       return
     }
 
-    setData((current) => ({
-      ...current,
-      mistakes: current.mistakes.filter(
-        (mistake) => mistake.bankId !== selectedBank.id,
-      ),
-      sessions: current.sessions.filter(
-        (session) =>
-          session.bankId !== selectedBank.id ||
-          session.mode !== 'mistake-review',
-      ),
-    }))
+    setData((current) => {
+      const currentSession = getActivePracticeSession(
+        current.sessions,
+        selectedBank.id,
+      )
+      const sessions =
+        currentSession?.settings.source === 'mistakes'
+          ? abandonPracticeSession(current.sessions, currentSession.id)
+          : current.sessions
+
+      return {
+        ...current,
+        mistakes: current.mistakes.filter(
+          (mistake) => mistake.bankId !== selectedBank.id,
+        ),
+        sessions,
+      }
+    })
   }
 
   function clearCurrentBankData() {
     if (
       !selectedBank ||
       !window.confirm(
-        `将清空“${selectedBank.name}”的作答、错题、未完成练习和练习设置，不会影响其他题库。是否继续？`,
+        `将清空“${selectedBank.name}”的作答、错题、练习会话记录和练习设置，不会影响其他题库。是否继续？`,
       )
     ) {
       return

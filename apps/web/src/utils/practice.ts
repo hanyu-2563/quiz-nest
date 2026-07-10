@@ -2,8 +2,7 @@ import type {
   Attempt,
   BankStatistics,
   MistakeRecord,
-  OrderStrategy,
-  PracticeMode,
+  PracticeAnswer,
   PracticeSession,
   PracticeSettings,
   Question,
@@ -25,18 +24,6 @@ function shuffleQuestions(questions: Question[]) {
   }
 
   return shuffled
-}
-
-function getOrderStrategy(mode: PracticeMode): OrderStrategy {
-  if (mode === 'random') {
-    return 'random'
-  }
-
-  if (mode === 'difficulty-ascending') {
-    return 'difficulty-ascending'
-  }
-
-  return 'sequential'
 }
 
 export function getPracticeQuestions(
@@ -64,14 +51,14 @@ export function getPracticeQuestions(
     }
 
     if (
-      settings.onlyUnpracticed &&
+      settings.source === 'unpracticed' &&
       practicedQuestionIds.has(question.id)
     ) {
       return false
     }
 
     if (
-      (settings.onlyMistakes || settings.mode === 'mistake-review') &&
+      settings.source === 'mistakes' &&
       !activeMistakeIds.has(question.id)
     ) {
       return false
@@ -80,11 +67,11 @@ export function getPracticeQuestions(
     return true
   })
 
-  if (settings.mode === 'random') {
+  if (settings.order === 'random') {
     result = shuffleQuestions(result)
   }
 
-  if (settings.mode === 'difficulty-ascending') {
+  if (settings.order === 'difficulty-ascending') {
     const difficultyRank = { easy: 0, medium: 1, hard: 2 }
     result = [...result].sort((left, right) => {
       const leftIndex = questions.findIndex(
@@ -111,21 +98,18 @@ export function getPracticeQuestions(
 export function createPracticeSession(
   bankId: string,
   questions: Question[],
-  mode: PracticeMode,
+  settings: PracticeSettings,
 ): PracticeSession {
   const now = new Date().toISOString()
 
   return {
     id: createId('session'),
     bankId,
-    mode,
+    settings: { ...settings },
+    status: 'active',
     questionIds: questions.map((question) => question.id),
     answers: {},
     currentIndex: 0,
-    totalCount: questions.length,
-    answeredCount: 0,
-    correctCount: 0,
-    orderStrategy: getOrderStrategy(mode),
     startedAt: now,
     updatedAt: now,
   }
@@ -142,11 +126,124 @@ export function createAttempt(
     sessionId: session.id,
     bankId: session.bankId,
     questionId,
-    mode: session.mode,
+    source: session.settings.source,
+    order: session.settings.order,
     selectedChoiceIds: [selectedChoiceId],
     isCorrect,
     answeredAt: new Date().toISOString(),
   }
+}
+
+export interface PracticeSessionProgress {
+  totalCount: number
+  answeredCount: number
+  correctCount: number
+  isComplete: boolean
+  completionRate: number
+  correctRate: number | null
+}
+
+export function getPracticeSessionProgress(
+  session: PracticeSession,
+): PracticeSessionProgress {
+  const submittedAnswers = session.questionIds
+    .map((questionId) => session.answers[questionId])
+    .filter(
+      (answer): answer is PracticeAnswer => Boolean(answer?.submitted),
+    )
+  const totalCount = session.questionIds.length
+  const answeredCount = submittedAnswers.length
+  const correctCount = submittedAnswers.filter(
+    (answer) => answer.isCorrect,
+  ).length
+
+  return {
+    totalCount,
+    answeredCount,
+    correctCount,
+    isComplete: totalCount > 0 && answeredCount === totalCount,
+    completionRate:
+      totalCount === 0 ? 0 : Math.round((answeredCount / totalCount) * 100),
+    correctRate:
+      answeredCount === 0
+        ? null
+        : Math.round((correctCount / answeredCount) * 100),
+  }
+}
+
+export function getActivePracticeSession(
+  sessions: PracticeSession[],
+  bankId: string,
+) {
+  return sessions.find(
+    (session) => session.bankId === bankId && session.status === 'active',
+  )
+}
+
+export function startPracticeSession(
+  sessions: PracticeSession[],
+  nextSession: PracticeSession,
+  abandonedAt = new Date().toISOString(),
+) {
+  const previousSessions = sessions
+    .filter((session) => session.id !== nextSession.id)
+    .map((session) =>
+      session.bankId === nextSession.bankId && session.status === 'active'
+        ? {
+            ...session,
+            status: 'abandoned' as const,
+            updatedAt: abandonedAt,
+            finishedAt: undefined,
+            abandonedAt,
+          }
+        : session,
+    )
+
+  return [
+    ...previousSessions,
+    {
+      ...nextSession,
+      status: 'active' as const,
+      finishedAt: undefined,
+      abandonedAt: undefined,
+    },
+  ]
+}
+
+export function finishPracticeSession(
+  sessions: PracticeSession[],
+  sessionId: string,
+  finishedAt = new Date().toISOString(),
+) {
+  return sessions.map((session) =>
+    session.id === sessionId && session.status === 'active'
+      ? {
+          ...session,
+          status: 'finished' as const,
+          updatedAt: finishedAt,
+          finishedAt,
+          abandonedAt: undefined,
+        }
+      : session,
+  )
+}
+
+export function abandonPracticeSession(
+  sessions: PracticeSession[],
+  sessionId: string,
+  abandonedAt = new Date().toISOString(),
+) {
+  return sessions.map((session) =>
+    session.id === sessionId && session.status === 'active'
+      ? {
+          ...session,
+          status: 'abandoned' as const,
+          updatedAt: abandonedAt,
+          finishedAt: undefined,
+          abandonedAt,
+        }
+      : session,
+  )
 }
 
 export function updateMistakes(

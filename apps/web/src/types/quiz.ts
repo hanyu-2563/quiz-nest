@@ -2,13 +2,14 @@ export type QuestionType = 'single-choice' | 'multiple-choice'
 
 export type Difficulty = 'easy' | 'medium' | 'hard'
 
-export type PracticeMode =
+export type PracticeSource = 'all' | 'unpracticed' | 'mistakes'
+
+export type PracticeOrder =
   | 'sequential'
   | 'random'
   | 'difficulty-ascending'
-  | 'mistake-review'
 
-export type OrderStrategy = 'sequential' | 'random' | 'difficulty-ascending'
+export type PracticeSessionStatus = 'active' | 'finished' | 'abandoned'
 
 export type Theme = 'light' | 'dark'
 
@@ -48,7 +49,8 @@ export interface Attempt {
   sessionId: string
   bankId: string
   questionId: string
-  mode: PracticeMode
+  source: PracticeSource
+  order: PracticeOrder
   selectedChoiceIds: string[]
   isCorrect: boolean
   answeredAt: string
@@ -76,25 +78,22 @@ export interface PracticeAnswer {
 export interface PracticeSession {
   id: string
   bankId: string
-  mode: PracticeMode
+  settings: PracticeSettings
+  status: PracticeSessionStatus
   questionIds: string[]
   answers: Record<string, PracticeAnswer>
   currentIndex: number
-  totalCount: number
-  answeredCount: number
-  correctCount: number
-  orderStrategy: OrderStrategy
   startedAt: string
   updatedAt: string
   finishedAt?: string
+  abandonedAt?: string
 }
 
 export interface PracticeSettings {
-  mode: PracticeMode
+  source: PracticeSource
+  order: PracticeOrder
   chapter: string
   tag: string
-  onlyUnpracticed: boolean
-  onlyMistakes: boolean
 }
 
 export interface BankStatistics {

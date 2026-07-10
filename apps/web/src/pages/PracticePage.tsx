@@ -5,11 +5,15 @@ import { QuestionCard } from '../components/QuestionCard'
 import type {
   AnswerSubmissionMode,
   MistakeRecord,
+  PracticeOrder,
   PracticeSession,
+  PracticeSettings,
+  PracticeSource,
   Question,
   QuestionBank,
 } from '../types/quiz'
 import { getQuestionDifficulty } from '../utils/difficulty'
+import { getPracticeSessionProgress } from '../utils/practice'
 
 export interface PracticePageProps {
   bank: QuestionBank
@@ -26,11 +30,20 @@ export interface PracticePageProps {
   onMarkMastered: (questionId: string) => void
 }
 
-const modeLabels = {
+const sourceLabels: Record<PracticeSource, string> = {
+  all: '全部题目',
+  unpracticed: '未练习题',
+  mistakes: '错题复习',
+}
+
+const orderLabels: Record<PracticeOrder, string> = {
   sequential: '顺序练习',
   random: '随机练习',
   'difficulty-ascending': '难度递增',
-  'mistake-review': '错题复习',
+}
+
+function formatPracticeLabel(settings: PracticeSettings) {
+  return `${sourceLabels[settings.source]} · ${orderLabels[settings.order]}`
 }
 
 export function PracticePage({
@@ -53,17 +66,7 @@ export function PracticePage({
   const answer = question ? session.answers[question.id] : undefined
   const selectedChoiceId = answer?.selectedChoiceId ?? null
   const submitted = answer?.submitted ?? false
-  const allAnswered =
-    session.totalCount > 0 &&
-    session.answeredCount === session.totalCount
-  const completionRate =
-    session.totalCount === 0
-      ? 0
-      : Math.round((session.answeredCount / session.totalCount) * 100)
-  const currentCorrectRate =
-    session.answeredCount === 0
-      ? null
-      : Math.round((session.correctCount / session.answeredCount) * 100)
+  const sessionProgress = getPracticeSessionProgress(session)
 
   function selectChoice(choiceId: string) {
     if (!question || submitted) {
@@ -89,7 +92,7 @@ export function PracticePage({
       return
     }
 
-    if (allAnswered) {
+    if (sessionProgress.isComplete) {
       onFinish()
       return
     }
@@ -212,7 +215,9 @@ export function PracticePage({
     <section className="page practice-page">
       <div className="practice-header">
         <div>
-          <p className="eyebrow">{modeLabels[session.mode]}</p>
+          <p className="eyebrow">
+            {formatPracticeLabel(session.settings)}
+          </p>
           <h1>{bank.name}</h1>
         </div>
         <div className="practice-header-actions">
@@ -240,33 +245,35 @@ export function PracticePage({
         <div className="practice-status-item">
           <span>当前题目</span>
           <strong>
-            {session.currentIndex + 1} / {session.totalCount}
+            {session.currentIndex + 1} / {sessionProgress.totalCount}
           </strong>
         </div>
         <div className="practice-status-item">
           <span>已完成</span>
-          <strong>{session.answeredCount} 题</strong>
+          <strong>{sessionProgress.answeredCount} 题</strong>
         </div>
         <div className="practice-status-progress">
           <div>
             <span>做题进度</span>
-            <strong>{completionRate}%</strong>
+            <strong>{sessionProgress.completionRate}%</strong>
           </div>
           <div
             className="progress-track"
             role="progressbar"
             aria-label="已提交题目进度"
             aria-valuemin={0}
-            aria-valuemax={session.totalCount}
-            aria-valuenow={session.answeredCount}
+            aria-valuemax={sessionProgress.totalCount}
+            aria-valuenow={sessionProgress.answeredCount}
           >
-            <span style={{ width: `${completionRate}%` }} />
+            <span style={{ width: `${sessionProgress.completionRate}%` }} />
           </div>
         </div>
         <div className="practice-status-item">
           <span>当前正确率</span>
           <strong>
-            {currentCorrectRate === null ? '—' : `${currentCorrectRate}%`}
+            {sessionProgress.correctRate === null
+              ? '—'
+              : `${sessionProgress.correctRate}%`}
           </strong>
         </div>
       </section>
@@ -317,7 +324,7 @@ export function PracticePage({
           <button type="button" onClick={moveForward}>
             {session.currentIndex < questions.length - 1
               ? '下一题'
-              : allAnswered
+              : sessionProgress.isComplete
                 ? '完成练习'
                 : '前往未答题'}
           </button>
@@ -352,7 +359,7 @@ export function PracticePage({
             <p className="explanation">{question.explanation}</p>
           )}
 
-          {session.mode === 'mistake-review' && isCorrect && (
+          {session.settings.source === 'mistakes' && isCorrect && (
             <button
               className="secondary-button"
               type="button"
