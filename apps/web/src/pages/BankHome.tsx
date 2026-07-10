@@ -7,6 +7,7 @@ import type {
   Question,
   QuestionBank,
 } from '../types/quiz'
+import { formatDate } from '../utils/date'
 
 const modeLabels: Record<PracticeMode, string> = {
   sequential: '顺序练习',
@@ -31,17 +32,6 @@ export interface BankHomeProps {
   onResetPractice: () => void
   onClearMistakes: () => void
   onClearCurrentBankData: () => void
-}
-
-function formatDateTime(value?: string) {
-  if (!value) {
-    return '暂无练习记录'
-  }
-
-  return new Intl.DateTimeFormat('zh-CN', {
-    dateStyle: 'medium',
-    timeStyle: 'short',
-  }).format(new Date(value))
 }
 
 export function BankHome({
@@ -146,7 +136,9 @@ export function BankHome({
             </div>
             <div>
               <dt>最近练习</dt>
-              <dd>{formatDateTime(statistics.latestPracticeAt)}</dd>
+              <dd>
+                {formatDate(statistics.latestPracticeAt, '暂无练习记录')}
+              </dd>
             </div>
           </dl>
         </section>

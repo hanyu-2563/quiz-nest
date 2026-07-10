@@ -3,6 +3,7 @@ import type {
   Question,
   QuestionBank,
 } from '../types/quiz'
+import { formatDate } from '../utils/date'
 
 export interface MistakePageProps {
   bank: QuestionBank
@@ -10,13 +11,6 @@ export interface MistakePageProps {
   mistakes: MistakeRecord[]
   onBack: () => void
   onStartReview: () => void
-}
-
-function formatDateTime(value: string) {
-  return new Intl.DateTimeFormat('zh-CN', {
-    dateStyle: 'medium',
-    timeStyle: 'short',
-  }).format(new Date(value))
 }
 
 function summarizeQuestion(content: string) {
@@ -101,7 +95,7 @@ export function MistakePage({
                 </div>
                 <div>
                   <dt>最近错误</dt>
-                  <dd>{formatDateTime(mistake.lastMistakenAt)}</dd>
+                  <dd>{formatDate(mistake.lastMistakenAt, '')}</dd>
                 </div>
                 <div>
                   <dt>章节</dt>

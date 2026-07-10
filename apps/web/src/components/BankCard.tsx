@@ -3,25 +3,13 @@ import type {
   PracticeSession,
   QuestionBank,
 } from '../types/quiz'
+import { formatDate } from '../utils/date'
 
 export interface BankCardProps {
   bank: QuestionBank
   statistics: BankStatistics
   activeSession?: PracticeSession
   onSelect: (bankId: string) => void
-}
-
-function formatRecentPractice(value?: string) {
-  if (!value) {
-    return '尚未练习'
-  }
-
-  return new Intl.DateTimeFormat('zh-CN', {
-    month: 'numeric',
-    day: 'numeric',
-    hour: '2-digit',
-    minute: '2-digit',
-  }).format(new Date(value))
 }
 
 export function BankCard({
@@ -74,7 +62,14 @@ export function BankCard({
         </div>
         <div>
           <dt>最近练习</dt>
-          <dd>{formatRecentPractice(statistics.latestPracticeAt)}</dd>
+          <dd>
+            {formatDate(statistics.latestPracticeAt, '尚未练习', {
+              month: 'numeric',
+              day: 'numeric',
+              hour: '2-digit',
+              minute: '2-digit',
+            })}
+          </dd>
         </div>
       </dl>
 
