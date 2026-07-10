@@ -3,6 +3,7 @@ import { OptionButton } from '../components/OptionButton'
 import type { OptionState } from '../components/OptionButton'
 import { QuestionCard } from '../components/QuestionCard'
 import type {
+  AnswerSubmissionMode,
   MistakeRecord,
   PracticeSession,
   Question,
@@ -15,7 +16,9 @@ export interface PracticePageProps {
   questions: Question[]
   session: PracticeSession
   mistakes: MistakeRecord[]
+  submissionMode: AnswerSubmissionMode
   onExit: () => void
+  onSubmissionModeChange: (mode: AnswerSubmissionMode) => void
   onSelectChoice: (questionId: string, choiceId: string) => void
   onSubmitAnswer: (question: Question, choiceId: string) => void
   onNavigate: (index: number) => void
@@ -35,7 +38,9 @@ export function PracticePage({
   questions,
   session,
   mistakes,
+  submissionMode,
   onExit,
+  onSubmissionModeChange,
   onSelectChoice,
   onSubmitAnswer,
   onNavigate,
@@ -51,6 +56,26 @@ export function PracticePage({
   const allAnswered =
     session.totalCount > 0 &&
     session.answeredCount === session.totalCount
+  const completionRate =
+    session.totalCount === 0
+      ? 0
+      : Math.round((session.answeredCount / session.totalCount) * 100)
+  const currentCorrectRate =
+    session.answeredCount === 0
+      ? null
+      : Math.round((session.correctCount / session.answeredCount) * 100)
+
+  function selectChoice(choiceId: string) {
+    if (!question || submitted) {
+      return
+    }
+
+    onSelectChoice(question.id, choiceId)
+
+    if (submissionMode === 'immediate') {
+      onSubmitAnswer(question, choiceId)
+    }
+  }
 
   function moveBackward() {
     if (session.currentIndex > 0) {
@@ -103,7 +128,7 @@ export function PracticePage({
         !submitted
       ) {
         event.preventDefault()
-        onSelectChoice(question.id, question.choices[choiceIndex].id)
+        selectChoice(question.choices[choiceIndex].id)
         return
       }
 
@@ -190,17 +215,63 @@ export function PracticePage({
           <p className="eyebrow">{modeLabels[session.mode]}</p>
           <h1>{bank.name}</h1>
         </div>
-        <button className="text-button" type="button" onClick={onExit}>
-          保存并退出
-        </button>
+        <div className="practice-header-actions">
+          <label className="submission-mode-setting">
+            <span>答题提交方式</span>
+            <select
+              value={submissionMode}
+              onChange={(event) =>
+                onSubmissionModeChange(
+                  event.target.value as AnswerSubmissionMode,
+                )
+              }
+            >
+              <option value="immediate">选择选项后立即提交</option>
+              <option value="manual">选择选项后手动提交</option>
+            </select>
+          </label>
+          <button className="text-button" type="button" onClick={onExit}>
+            保存并退出
+          </button>
+        </div>
       </div>
 
-      <QuestionCard
-        question={question}
-        difficulty={difficulty}
-        position={session.currentIndex + 1}
-        total={questions.length}
-      />
+      <section className="practice-status" aria-label="练习状态">
+        <div className="practice-status-item">
+          <span>当前题目</span>
+          <strong>
+            {session.currentIndex + 1} / {session.totalCount}
+          </strong>
+        </div>
+        <div className="practice-status-item">
+          <span>已完成</span>
+          <strong>{session.answeredCount} 题</strong>
+        </div>
+        <div className="practice-status-progress">
+          <div>
+            <span>做题进度</span>
+            <strong>{completionRate}%</strong>
+          </div>
+          <div
+            className="progress-track"
+            role="progressbar"
+            aria-label="已提交题目进度"
+            aria-valuemin={0}
+            aria-valuemax={session.totalCount}
+            aria-valuenow={session.answeredCount}
+          >
+            <span style={{ width: `${completionRate}%` }} />
+          </div>
+        </div>
+        <div className="practice-status-item">
+          <span>当前正确率</span>
+          <strong>
+            {currentCorrectRate === null ? '—' : `${currentCorrectRate}%`}
+          </strong>
+        </div>
+      </section>
+
+      <QuestionCard question={question} difficulty={difficulty} />
 
       <div className="option-list" aria-label="答案选项">
         {question.choices.map((choice, index) => (
@@ -211,9 +282,7 @@ export function PracticePage({
             selected={choice.id === selectedChoiceId}
             disabled={submitted}
             state={getOptionState(choice.id)}
-            onSelect={(choiceId) =>
-              onSelectChoice(question.id, choiceId)
-            }
+            onSelect={selectChoice}
           />
         ))}
       </div>
@@ -228,7 +297,7 @@ export function PracticePage({
           上一题
         </button>
 
-        {!submitted ? (
+        {!submitted && submissionMode === 'manual' ? (
           <button
             type="button"
             disabled={selectedChoiceId === null}
@@ -240,6 +309,10 @@ export function PracticePage({
           >
             提交答案
           </button>
+        ) : !submitted ? (
+          <span className="immediate-submit-hint">
+            选择选项后将立即提交
+          </span>
         ) : (
           <button type="button" onClick={moveForward}>
             {session.currentIndex < questions.length - 1
@@ -295,8 +368,9 @@ export function PracticePage({
       )}
 
       <p className="keyboard-help">
-        快捷键：1-4 或 A-D 选择，Enter 提交/下一题，←/→ 切题，R
-        显示或隐藏解析
+        {submissionMode === 'immediate'
+          ? '快捷键：1-4 或 A-D 选择并提交，Enter 下一题，←/→ 切题，R 显示或隐藏解析'
+          : '快捷键：1-4 或 A-D 选择，Enter 提交/下一题，←/→ 切题，R 显示或隐藏解析'}
       </p>
     </section>
   )

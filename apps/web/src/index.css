@@ -7,12 +7,15 @@
   --page-bg: #f7f8fa;
   --surface: #ffffff;
   --surface-subtle: #f0f3f6;
+  --surface-raised: #fbfcfd;
   --text: #17202a;
   --text-muted: #52606d;
   --border: #cfd6de;
+  --border-strong: #aeb8c3;
   --primary: #1d4f91;
   --primary-hover: #173f74;
   --primary-soft: #eaf2fb;
+  --primary-contrast: #ffffff;
   --focus: #93b9e8;
   --success: #237a47;
   --success-soft: #e8f5ed;
@@ -34,12 +37,15 @@
   --page-bg: #12171d;
   --surface: #1a2129;
   --surface-subtle: #222b35;
+  --surface-raised: #1e2630;
   --text: #f1f4f7;
   --text-muted: #aeb9c5;
   --border: #3b4652;
+  --border-strong: #596675;
   --primary: #78aee8;
   --primary-hover: #9cc4ef;
   --primary-soft: #23394f;
+  --primary-contrast: #102438;
   --focus: #78aee8;
   --success: #70cf99;
   --success-soft: #193c2a;
@@ -54,10 +60,16 @@
   box-sizing: border-box;
 }
 
+::selection {
+  background: var(--primary-soft);
+  color: var(--text);
+}
+
 body {
   margin: 0;
   color: var(--text);
   background: var(--page-bg);
+  line-height: 1.5;
 }
 
 button,

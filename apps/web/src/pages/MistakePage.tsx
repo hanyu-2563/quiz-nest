@@ -57,7 +57,7 @@ export function MistakePage({
       </button>
 
       <div className="page-heading">
-        <p className="eyebrow">错题记录</p>
+        <p className="eyebrow">错题本</p>
         <h1>{bank.name}</h1>
         <p>
           共 {mistakeItems.length} 道错题，其中 {activeMistakeCount}{' '}

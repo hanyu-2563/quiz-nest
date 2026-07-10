@@ -1,12 +1,20 @@
 import { useEffect, useState } from 'react'
 import './App.css'
+import {
+  BankWorkspace,
+  type WorkspaceSection,
+} from './components/BankWorkspace'
 import { mockQuestionBanks, mockQuestions } from './data/mockData'
 import { useLocalStorage } from './hooks/useLocalStorage'
 import { BankHome } from './pages/BankHome'
 import { BankLobby } from './pages/BankLobby'
 import { MistakePage } from './pages/MistakePage'
 import { PracticePage } from './pages/PracticePage'
-import type { PracticeSettings, Question } from './types/quiz'
+import type {
+  AnswerSubmissionMode,
+  PracticeSettings,
+  Question,
+} from './types/quiz'
 import {
   createAttempt,
   createPracticeSession,
@@ -22,10 +30,16 @@ function App() {
   const { data, setData, clearData } = useLocalStorage()
   const [view, setView] = useState<View>('lobby')
   const [selectedBankId, setSelectedBankId] = useState<string | null>(null)
+  const [bankSection, setBankSection] =
+    useState<Exclude<WorkspaceSection, 'mistakes'>>('overview')
 
   useEffect(() => {
     document.documentElement.dataset.theme = data.theme
   }, [data.theme])
+
+  useEffect(() => {
+    window.scrollTo({ top: 0, behavior: 'auto' })
+  }, [view, selectedBankId, bankSection])
 
   const selectedBank = mockQuestionBanks.find(
     (bank) => bank.id === selectedBankId,
@@ -83,15 +97,53 @@ function App() {
         data.mistakes,
       )
     : undefined
+  const lobbyItems = mockQuestionBanks.map((bank) => {
+    const questionCount = mockQuestions.filter(
+      (question) =>
+        question.bankId === bank.id && question.type === 'single-choice',
+    ).length
+
+    return {
+      bank,
+      statistics: getBankStatistics(
+        bank.id,
+        questionCount,
+        data.attempts,
+        data.mistakes,
+      ),
+      activeSession: data.sessions.find(
+        (session) => session.bankId === bank.id,
+      ),
+    }
+  })
+  const hasLocalData =
+    data.attempts.length > 0 ||
+    data.mistakes.length > 0 ||
+    data.sessions.length > 0 ||
+    Object.keys(data.practiceSettings).length > 0 ||
+    data.answerSubmissionMode !== 'manual' ||
+    data.theme === 'dark'
 
   function openBank(bankId: string) {
     setSelectedBankId(bankId)
+    setBankSection('overview')
     setView('bank-home')
   }
 
   function returnToLobby() {
     setSelectedBankId(null)
+    setBankSection('overview')
     setView('lobby')
+  }
+
+  function navigateWorkspace(section: WorkspaceSection) {
+    if (section === 'mistakes') {
+      setView('mistakes')
+      return
+    }
+
+    setBankSection(section)
+    setView('bank-home')
   }
 
   function updatePracticeSettings(settings: PracticeSettings) {
@@ -199,19 +251,30 @@ function App() {
   }
 
   function submitAnswer(question: Question, choiceId: string) {
-    if (!activeSession || activeSession.answers[question.id]?.submitted) {
+    if (!activeSession) {
       return
     }
 
     const isCorrect = question.answerChoiceIds.includes(choiceId)
-    const attempt = createAttempt(
-      activeSession,
-      question.id,
-      choiceId,
-      isCorrect,
-    )
 
     setData((current) => {
+      const currentSession = current.sessions.find(
+        (session) => session.id === activeSession.id,
+      )
+
+      if (
+        !currentSession ||
+        currentSession.answers[question.id]?.submitted
+      ) {
+        return current
+      }
+
+      const attempt = createAttempt(
+        currentSession,
+        question.id,
+        choiceId,
+        isCorrect,
+      )
       const sessions = current.sessions.map((session) => {
         if (session.id !== activeSession.id) {
           return session
@@ -287,6 +350,7 @@ function App() {
         (session) => session.id !== activeSession.id,
       ),
     }))
+    setBankSection('overview')
     setView('bank-home')
   }
 
@@ -337,10 +401,40 @@ function App() {
     }))
   }
 
+  function clearCurrentBankData() {
+    if (
+      !selectedBank ||
+      !window.confirm(
+        `将清空“${selectedBank.name}”的作答、错题、未完成练习和练习设置，不会影响其他题库。是否继续？`,
+      )
+    ) {
+      return
+    }
+
+    setData((current) => {
+      const practiceSettings = { ...current.practiceSettings }
+      delete practiceSettings[selectedBank.id]
+
+      return {
+        ...current,
+        attempts: current.attempts.filter(
+          (attempt) => attempt.bankId !== selectedBank.id,
+        ),
+        mistakes: current.mistakes.filter(
+          (mistake) => mistake.bankId !== selectedBank.id,
+        ),
+        sessions: current.sessions.filter(
+          (session) => session.bankId !== selectedBank.id,
+        ),
+        practiceSettings,
+      }
+    })
+  }
+
   function clearAllLocalData() {
     if (
       !window.confirm(
-        '将清空全部题库的练习、错题、设置和夜间模式数据，是否继续？',
+        '将清空所有题库的练习、错题、设置和外观偏好。此操作只应在题库大厅执行，是否继续？',
       )
     ) {
       return
@@ -357,55 +451,95 @@ function App() {
     }))
   }
 
+  function updateAnswerSubmissionMode(mode: AnswerSubmissionMode) {
+    setData((current) => ({
+      ...current,
+      answerSubmissionMode: mode,
+    }))
+  }
+
   return (
     <div className="app-shell">
       <header className="app-header">
-        <button className="brand-button" type="button" onClick={returnToLobby}>
-          QuizNest
-        </button>
-        <span>先选择题库，再开始专注刷题。</span>
+        <div className="brand-lockup">
+          <button
+            className="brand-button"
+            type="button"
+            onClick={returnToLobby}
+          >
+            QuizNest
+          </button>
+          <span>本地刷题工具</span>
+        </div>
+        <div className="header-context">
+          <span className="local-status" aria-hidden="true" />
+          {selectedBank ? selectedBank.name : '数据保存在当前浏览器'}
+        </div>
         <button
           className="theme-button"
           type="button"
           onClick={toggleTheme}
           aria-label="切换浅色或深色模式"
         >
-          {data.theme === 'light' ? '切换深色' : '切换浅色'}
+          <span className="theme-swatch" aria-hidden="true" />
+          外观：{data.theme === 'light' ? '浅色' : '深色'}
         </button>
       </header>
 
-      <main className="app-content">
+      <main
+        className={`app-content ${
+          selectedBank && view !== 'practice' ? 'workspace-content' : ''
+        }`}
+      >
         {view === 'lobby' && (
-          <BankLobby banks={mockQuestionBanks} onSelectBank={openBank} />
-        )}
-
-        {view === 'bank-home' && selectedBank && statistics && (
-          <BankHome
-            bank={selectedBank}
-            questions={selectedQuestions}
-            statistics={statistics}
-            settings={practiceSettings}
-            availableQuestionCount={availableQuestions.length}
-            activeSession={activeSession}
-            onBack={returnToLobby}
-            onSettingsChange={updatePracticeSettings}
-            onStartPractice={() => startPractice()}
-            onContinuePractice={() => setView('practice')}
-            onOpenMistakes={() => setView('mistakes')}
-            onResetPractice={resetCurrentBankPractice}
-            onClearMistakes={clearCurrentBankMistakes}
+          <BankLobby
+            items={lobbyItems}
+            hasLocalData={hasLocalData}
+            onSelectBank={openBank}
             onClearAllData={clearAllLocalData}
           />
         )}
 
-        {view === 'mistakes' && selectedBank && (
-          <MistakePage
-            bank={selectedBank}
-            questions={selectedQuestions}
-            mistakes={bankMistakes}
-            onBack={() => setView('bank-home')}
-            onStartReview={startMistakeReview}
-          />
+        {(view === 'bank-home' || view === 'mistakes') &&
+          selectedBank &&
+          statistics && (
+            <BankWorkspace
+              bank={selectedBank}
+              statistics={statistics}
+              activeSection={
+                view === 'mistakes' ? 'mistakes' : bankSection
+              }
+              onBack={returnToLobby}
+              onNavigate={navigateWorkspace}
+            >
+              {view === 'bank-home' ? (
+                <BankHome
+                  section={bankSection}
+                  bank={selectedBank}
+                  questions={selectedQuestions}
+                  statistics={statistics}
+                  settings={practiceSettings}
+                  availableQuestionCount={availableQuestions.length}
+                  activeSession={activeSession}
+                  onSettingsChange={updatePracticeSettings}
+                  onStartPractice={() => startPractice()}
+                  onContinuePractice={() => setView('practice')}
+                  onOpenPractice={() => navigateWorkspace('practice')}
+                  onOpenMistakes={() => navigateWorkspace('mistakes')}
+                  onResetPractice={resetCurrentBankPractice}
+                  onClearMistakes={clearCurrentBankMistakes}
+                  onClearCurrentBankData={clearCurrentBankData}
+                />
+              ) : (
+                <MistakePage
+                  bank={selectedBank}
+                  questions={selectedQuestions}
+                  mistakes={bankMistakes}
+                  onBack={() => navigateWorkspace('overview')}
+                  onStartReview={startMistakeReview}
+                />
+              )}
+            </BankWorkspace>
         )}
 
         {view === 'practice' &&
@@ -416,7 +550,9 @@ function App() {
               questions={sessionQuestions}
               session={activeSession}
               mistakes={bankMistakes}
+              submissionMode={data.answerSubmissionMode}
               onExit={() => setView('bank-home')}
+              onSubmissionModeChange={updateAnswerSubmissionMode}
               onSelectChoice={selectChoice}
               onSubmitAnswer={submitAnswer}
               onNavigate={navigatePractice}

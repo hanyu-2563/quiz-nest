@@ -1,4 +1,5 @@
 import type {
+  AnswerSubmissionMode,
   Attempt,
   MistakeRecord,
   PracticeSession,
@@ -14,6 +15,7 @@ export interface QuizNestLocalData {
   mistakes: MistakeRecord[]
   sessions: PracticeSession[]
   theme: Theme
+  answerSubmissionMode: AnswerSubmissionMode
   practiceSettings: Record<string, PracticeSettings>
 }
 
@@ -229,6 +231,7 @@ export function createDefaultLocalData(): QuizNestLocalData {
     mistakes: [],
     sessions: [],
     theme: 'light',
+    answerSubmissionMode: 'manual',
     practiceSettings: {},
   }
 }
@@ -264,6 +267,10 @@ export function loadLocalData(): QuizNestLocalData {
             )
         : [],
       theme: parsed.theme === 'dark' ? 'dark' : 'light',
+      answerSubmissionMode:
+        parsed.answerSubmissionMode === 'immediate'
+          ? 'immediate'
+          : 'manual',
       practiceSettings: normalizePracticeSettings(
         parsed.practiceSettings,
       ),

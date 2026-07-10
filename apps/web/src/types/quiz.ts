@@ -12,6 +12,8 @@ export type OrderStrategy = 'sequential' | 'random' | 'difficulty-ascending'
 
 export type Theme = 'light' | 'dark'
 
+export type AnswerSubmissionMode = 'immediate' | 'manual'
+
 export interface QuestionBank {
   id: string
   name: string
