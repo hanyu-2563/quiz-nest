@@ -493,7 +493,7 @@ function App() {
 
       <main
         className={`app-content ${
-          selectedBank && view !== 'practice' ? 'workspace-content' : ''
+          selectedBank && view !== 'lobby' ? 'workspace-content' : ''
         }`}
       >
         {view === 'lobby' && (
@@ -549,21 +549,30 @@ function App() {
 
         {view === 'practice' &&
           selectedBank &&
-          activeSession && (
-            <PracticePage
+          activeSession &&
+          statistics && (
+            <BankWorkspace
               bank={selectedBank}
-              questions={sessionQuestions}
-              session={activeSession}
-              mistakes={bankMistakes}
-              submissionMode={data.answerSubmissionMode}
-              onExit={() => setView('bank-home')}
-              onSubmissionModeChange={updateAnswerSubmissionMode}
-              onSelectChoice={selectChoice}
-              onSubmitAnswer={submitAnswer}
-              onNavigate={navigatePractice}
-              onFinish={finishPractice}
-              onMarkMastered={markMistakeMastered}
-            />
+              statistics={statistics}
+              activeSection="practice"
+              onBack={returnToLobby}
+              onNavigate={navigateWorkspace}
+            >
+              <PracticePage
+                bank={selectedBank}
+                questions={sessionQuestions}
+                session={activeSession}
+                mistakes={bankMistakes}
+                submissionMode={data.answerSubmissionMode}
+                onExit={() => setView('bank-home')}
+                onSubmissionModeChange={updateAnswerSubmissionMode}
+                onSelectChoice={selectChoice}
+                onSubmitAnswer={submitAnswer}
+                onNavigate={navigatePractice}
+                onFinish={finishPractice}
+                onMarkMastered={markMistakeMastered}
+              />
+            </BankWorkspace>
           )}
       </main>
     </div>

@@ -1,6 +1,10 @@
 import type { Choice } from '../types/quiz'
 
-export type OptionState = 'default' | 'correct' | 'incorrect'
+export type OptionState =
+  | 'default'
+  | 'correct'
+  | 'incorrect'
+  | 'dimmed'
 
 export interface OptionButtonProps {
   choice: Choice
@@ -19,10 +23,24 @@ export function OptionButton({
   state = 'default',
   onSelect,
 }: OptionButtonProps) {
+  const stateDescription =
+    state === 'correct'
+      ? '正确答案'
+      : state === 'incorrect'
+        ? '你的答案，回答错误'
+        : undefined
+
   return (
     <button
       type="button"
       className={`option-button option-${state}`}
+      aria-label={[
+        shortcutLabel ? `选项 ${shortcutLabel}` : undefined,
+        choice.content,
+        stateDescription,
+      ]
+        .filter(Boolean)
+        .join('，')}
       aria-pressed={selected}
       disabled={disabled}
       onClick={() => onSelect?.(choice.id)}
@@ -32,7 +50,17 @@ export function OptionButton({
           {shortcutLabel}
         </span>
       )}
-      <span>{choice.content}</span>
+      <span className="option-content">{choice.content}</span>
+      {state === 'correct' && (
+        <span className="option-result" aria-hidden="true">
+          ✓
+        </span>
+      )}
+      {state === 'incorrect' && (
+        <span className="option-result" aria-hidden="true">
+          ×
+        </span>
+      )}
     </button>
   )
 }
